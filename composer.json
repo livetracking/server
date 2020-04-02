@@ -1,0 +1,35 @@
+{
+    "name": "livetracking/server",
+    "description": "Live Tracking",
+    "homepage": "https://livetracking.nkn-it.de/",
+    "license": "GNU Affero General Public License",
+    "authors": [
+        {
+            "name": "Nils Knieling",
+            "homepage": "https://livetracking.nkn-it.de/"
+        }
+    ],
+    "require": {
+        "php": "^7.2",
+        "slim/slim": "^3.0",
+        "slim/twig-view": "^2.5",
+        "monolog/monolog": "^2.0",
+        "tuupola/slim-basic-auth": "^3.0",
+        "ext-pdo_sqlite": ">=1.0",
+        "faapz/pdo": "^2.0",
+        "influxdb/influxdb-php": "^1.15",
+        "phing/phing": "^2.16"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "start": "php -S 127.0.0.1:8080 -t public public/index.php",
+        "test": "phpunit"
+    }
+}

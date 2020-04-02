@@ -1,0 +1,1250 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{ user.username|e }} - Live Tracking</title>
+<link rel="shortcut icon" href="https://raw.githubusercontent.com/livetracking/icon/master/livetracking_icon_multi_size.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js"></script>
+<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+<script src="https://www.amcharts.com/lib/3/serial.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+<style>
+#samples-chart {
+	width: 100%;
+	height: 500px;
+}
+#samples-map {
+	width: 100%;
+	height: 600px;
+}
+</style>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-static-top">
+	<div class="container-fluid">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="#">
+				Live Tracking
+			</a>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+				<li>
+					<a href="#">
+						<i class="fa fa-arrows-h" aria-hidden="true"></i>
+						Last 30m
+					</a>
+				</li>
+				<li>
+					<a href="#">
+						<i class="fa fa-refresh" aria-hidden="true" id="refresh"></i>
+						Refresh every 6s
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="container-fluid">
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="page-header">
+			<h1>
+				{{ user.username|e }}
+			</h1>
+		</div>
+	</div>
+</div>
+
+
+<!-- Alerts -->
+<div class="row">
+<div class="col-md-12">
+	
+	<div id="ie_warning"></div>
+	<script>
+	var ua = window.navigator.userAgent;
+	var msie = ua.indexOf("MSIE ");
+	var trident = ua.indexOf('Trident/'); // IE 11
+	if (msie > 0 || trident > 0) {
+		$('#ie_warning').append(' \
+			<div class="alert alert-danger"> \
+				<i class="fa fa-internet-explorer"></i> \
+				<strong>Internet Explorer is not supported.</strong> Please use a modern web browser. \
+				<p class="text-right"> \
+					<a href="https://www.mozilla.org/firefox/" target="_blank" class="btn btn-default" role="button"> \
+						Firefox \
+					</a> \
+					<a href="https://www.google.com/chrome/" target="_blank" class="btn btn-default" role="button"> \
+						Chrome \
+					</a> \
+				</p> \
+			</div> \
+		');
+	}
+	</script>
+	
+	<div class="alert alert-info" role="alert" id="waiting">
+		<i class="fa fa-spinner fa-spin fa-fw" aria-hidden="true"></i>
+		Waiting for data...
+	</div>
+	
+	<div class="alert alert-danger hidden" role="alert" id="error">
+		<i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+		Can not retrieve data!
+	</div>
+	
+</div>
+</div>
+<!-- // Alerts -->
+
+<!-- Last -->
+<div class="row">
+	<div class="hidden col-md-4 last" id="time">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<i class="fa fa-calendar" aria-hidden="true"></i>
+				<span id="last_time">Day Mon 31 2099 12:34:56 GMT+0100 (CET)</span>
+			</div>
+		</div>
+	</div>
+	<div class="hidden col-md-2 col-sm-3 last" id="dur_s">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<i class="fa fa-clock-o" aria-hidden="true"></i>
+				<span id="last_dur_s">HH:MM:SS</span>
+			</div>
+		</div>
+	</div>
+	<div class="hidden col-md-2 col-sm-3 last" id="dist_km">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<i class="fa fa-road" aria-hidden="true"></i>
+				<span id="last_dist_km">123.12</span> km
+			</div>
+		</div>
+	</div>
+	<div class="hidden col-md-2 col-sm-3 last" id="battery">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<i class="fa fa-battery-three-quarters" aria-hidden="true"></i>
+				<span id="last_battery">80</span> %
+			</div>
+		</div>
+	</div>
+	<div class="hidden col-md-2 col-sm-3 last" id="gsm_signal">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<i class="fa fa-signal" aria-hidden="true"></i>
+				<span id="last_gsm_signal">60</span> %
+			</div>
+		</div>
+	</div>
+</div>
+<!-- // Last -->
+
+<!-- Panels -->
+<div class="row">
+
+<!-- Last -->
+<div class="col-lg-3 col-md-6">
+
+<div class="panel panel-default hidden" id="last">
+<div class="panel-heading">
+	<h3 class="panel-title">Last</h3>
+</div>
+<div class="panel-body">
+	<table class="table table-hover">
+	<thead>
+	<tr>
+		<th>&nbsp;</th>
+		<th>&nbsp;</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr id="alt_m" class="hidden">
+		<th>
+			<i class="fa fa-area-chart" aria-hidden="true"></i>
+			Altitude (m)
+		</th>
+		<td id="last_alt_m"></td>
+	</tr>
+	<tr id="spd_kph" class="hidden">
+		<th>
+			<i class="fa fa-tachometer" aria-hidden="true"></i>
+			Speed (kph)
+		</th>
+		<td id="last_spd_kph"></td>
+	</tr>
+	<tr id="hr_bpm" class="hidden">
+		<th>
+			<i class="fa fa-heart" aria-hidden="true"></i>
+			Heartrate (bpm)
+		</th>
+		<td id="last_hr_bpm"></td>
+	</tr>
+	<tr id="cad_rpm" class="hidden">
+		<th>
+			<i class="fa fa-repeat" aria-hidden="true"></i>
+			Cadence (rpm)
+		</th>
+		<td id="last_cad_rpm"></td>
+	</tr>
+	<tr id="pwr_w" class="hidden">
+		<th>
+			<i class="fa fa-bolt" aria-hidden="true"></i>
+			Power (W)
+		</th>
+		<td id="last_pwr_w"></td>
+	</tr>
+	<tr id="temp_c" class="hidden">
+		<th>
+			<i class="fa fa-thermometer-three-quarters" aria-hidden="true"></i>
+			Temp. (°C)
+		</th>
+		<td id="last_temp_c"></td>
+	</tr>
+	</tbody>
+	</table>
+</div>
+</div>
+
+</div> <!-- // Last -->
+
+<!-- Average -->
+<div class="col-lg-3 col-md-6">
+
+<div class="panel panel-default hidden" id="mean">
+<div class="panel-heading">
+	<h3 class="panel-title">Average</h3>
+</div>
+<div class="panel-body">
+	<table class="table table-hover">
+	<thead>
+	<tr><th>&nbsp;</th><th>3s</th><th>1m</th><th>5m</th><th>10m</th></tr>
+	</thead>
+	<tbody>
+	<tr id="mean_alt_m" class="hidden">
+		<th>
+			<i class="fa fa-area-chart" aria-hidden="true"></i>
+		</th>
+		<td id="mean_alt_m_3s"></td>
+		<td id="mean_alt_m_1m"></td>
+		<td id="mean_alt_m_5m"></td>
+		<td id="mean_alt_m_10m"></td>
+	</tr>
+	<tr id="mean_spd_kph" class="hidden">
+		<th>
+			<i class="fa fa-tachometer" aria-hidden="true"></i>
+		</th>
+		<td id="mean_spd_kph_3s"></td>
+		<td id="mean_spd_kph_1m"></td>
+		<td id="mean_spd_kph_5m"></td>
+		<td id="mean_spd_kph_10m"></td>
+	</tr>
+	<tr id="mean_hr_bpm" class="hidden">
+		<th>
+			<i class="fa fa-heart" aria-hidden="true"></i>
+		</th>
+		<td id="mean_hr_bpm_3s"></td>
+		<td id="mean_hr_bpm_1m"></td>
+		<td id="mean_hr_bpm_5m"></td>
+		<td id="mean_hr_bpm_10m"></td>
+	</tr>
+	<tr id="mean_cad_rpm" class="hidden">
+		<th>
+			<i class="fa fa-repeat" aria-hidden="true"></i>
+		</th>
+		<td id="mean_cad_rpm_3s"></td>
+		<td id="mean_cad_rpm_1m"></td>
+		<td id="mean_cad_rpm_5m"></td>
+		<td id="mean_cad_rpm_10m"></td>
+	</tr>
+	<tr id="mean_pwr_w" class="hidden">
+		<th>
+			<i class="fa fa-bolt" aria-hidden="true"></i>
+		</th>
+		<td id="mean_pwr_w_3s"></td>
+		<td id="mean_pwr_w_1m"></td>
+		<td id="mean_pwr_w_5m"></td>
+		<td id="mean_pwr_w_10m"></td>
+	</tr>
+	<tr id="mean_temp_c" class="hidden">
+		<th>
+			<i class="fa fa-thermometer-three-quarters" aria-hidden="true"></i>
+		</th>
+		<td id="mean_temp_c_3s"></td>
+		<td id="mean_temp_c_1m"></td>
+		<td id="mean_temp_c_5m"></td>
+		<td id="mean_temp_c_10m"></td>
+	</tr>
+	</tbody>
+	</table>
+</div>
+</div>
+
+</div> <!-- // Average -->
+
+<!-- Maximum -->
+<div class="col-lg-3 col-md-6">
+	
+<div class="panel panel-default hidden" id="max">
+<div class="panel-heading">
+	<h3 class="panel-title">Maximum</h3>
+</div>
+<div class="panel-body">
+	<table class="table table-hover">
+	<thead>
+	<tr><th>&nbsp;</th><th>3s</th><th>1m</th><th>5m</th><th>10m</th></tr>
+	</thead>
+	<tbody>
+	<tr id="max_alt_m" class="hidden">
+		<th>
+			<i class="fa fa-area-chart" aria-hidden="true"></i>
+		</th>
+		<td id="max_alt_m_3s"></td>
+		<td id="max_alt_m_1m"></td>
+		<td id="max_alt_m_5m"></td>
+		<td id="max_alt_m_10m"></td>
+	</tr>
+	<tr id="max_spd_kph" class="hidden">
+		<th><i class="fa fa-tachometer" aria-hidden="true"></i></th>
+		<td id="max_spd_kph_3s"></td>
+		<td id="max_spd_kph_1m"></td>
+		<td id="max_spd_kph_5m"></td>
+		<td id="max_spd_kph_10m"></td>
+	</tr>
+	<tr id="max_hr_bpm" class="hidden">
+		<th><i class="fa fa-heart" aria-hidden="true"></i></th>
+		<td id="max_hr_bpm_3s"></td>
+		<td id="max_hr_bpm_1m"></td>
+		<td id="max_hr_bpm_5m"></td>
+		<td id="max_hr_bpm_10m"></td>
+	</tr>
+	<tr id="max_cad_rpm" class="hidden">
+		<th><i class="fa fa-repeat" aria-hidden="true"></i></th>
+		<td id="max_cad_rpm_3s"></td>
+		<td id="max_cad_rpm_1m"></td>
+		<td id="max_cad_rpm_5m"></td>
+		<td id="max_cad_rpm_10m"></td>
+	</tr>
+	<tr id="max_pwr_w" class="hidden">
+		<th><i class="fa fa-bolt" aria-hidden="true"></i></th>
+		<td id="max_pwr_w_3s"></td>
+		<td id="max_pwr_w_1m"></td>
+		<td id="max_pwr_w_5m"></td>
+		<td id="max_pwr_w_10m"></td>
+	</tr>
+	<tr id="max_temp_c" class="hidden">
+		<th>
+			<i class="fa fa-thermometer-three-quarters" aria-hidden="true"></i>
+		</th>
+		<td id="max_temp_c_3s"></td>
+		<td id="max_temp_c_1m"></td>
+		<td id="max_temp_c_5m"></td>
+		<td id="max_temp_c_10m"></td>
+	</tr>
+	</tbody>
+	</table>
+</div>
+</div>
+
+</div> <!-- // Maximum -->
+
+<!-- Minimum -->
+<div class="col-lg-3 col-md-6">
+
+<div class="panel panel-default hidden" id="min">
+<div class="panel-heading">
+	<h3 class="panel-title">Minimum</h3>
+</div>
+<div class="panel-body">
+	<table class="table table-hover">
+	<thead>
+	<tr><th>&nbsp;</th><th>3s</th><th>1m</th><th>5m</th><th>10m</th></tr>
+	</thead>
+	<tbody>
+	<tr id="min_alt_m" class="hidden">
+		<th>
+			<i class="fa fa-area-chart" aria-hidden="true"></i>
+		</th>
+		<td id="min_alt_m_3s"></td>
+		<td id="min_alt_m_1m"></td>
+		<td id="min_alt_m_5m"></td>
+		<td id="min_alt_m_10m"></td>
+	</tr>
+	<tr id="min_spd_kph" class="hidden">
+		<th><i class="fa fa-tachometer" aria-hidden="true"></i></th>
+		<td id="min_spd_kph_3s"></td>
+		<td id="min_spd_kph_1m"></td>
+		<td id="min_spd_kph_5m"></td>
+		<td id="min_spd_kph_10m"></td>
+	</tr>
+	<tr id="min_hr_bpm" class="hidden">
+		<th><i class="fa fa-heart" aria-hidden="true"></i></th>
+		<td id="min_hr_bpm_3s"></td>
+		<td id="min_hr_bpm_1m"></td>
+		<td id="min_hr_bpm_5m"></td>
+		<td id="min_hr_bpm_10m"></td>
+	</tr>
+	<tr id="min_cad_rpm" class="hidden">
+		<th><i class="fa fa-repeat" aria-hidden="true"></i></th>
+		<td id="min_cad_rpm_3s"></td>
+		<td id="min_cad_rpm_1m"></td>
+		<td id="min_cad_rpm_5m"></td>
+		<td id="min_cad_rpm_10m"></td>
+	</tr>
+	<tr id="min_pwr_w" class="hidden">
+		<th><i class="fa fa-bolt" aria-hidden="true"></i></th>
+		<td id="min_pwr_w_3s"></td>
+		<td id="min_pwr_w_1m"></td>
+		<td id="min_pwr_w_5m"></td>
+		<td id="min_pwr_w_10m"></td>
+	</tr>
+	<tr id="min_temp_c" class="hidden">
+		<th>
+			<i class="fa fa-thermometer-three-quarters" aria-hidden="true"></i>
+		</th>
+		<td id="min_temp_c_3s"></td>
+		<td id="min_temp_c_1m"></td>
+		<td id="min_temp_c_5m"></td>
+		<td id="min_temp_c_10m"></td>
+	</tr>
+	</tbody>
+	</table>
+</div>
+</div>
+
+</div> <!-- // Minimum -->
+
+</div> 
+<!-- // Panels -->
+
+<!-- Map -->
+<div class="row">
+<div class="col-md-12"><div id="samples-map"></div></div>
+</div>
+<!-- // Map -->
+
+<!-- Chart -->
+<div class="row">
+<div class="col-md-12"><div id="samples-chart" class="hidden"></div></div>
+</div>
+<!-- // Chart -->
+
+{% include 'footer.html' %}
+
+</div> <!-- // container -->
+
+<script>
+var username = '{{ user.username|e }}';
+var data_chart = [];
+var data_map   = [];
+var axisLeft   = 0;
+var axisRight  = 0;
+
+// load now() - X for avg, min and max
+var last_timestamp = 'now()';
+// load last 30min samples
+var last_samples_timestamp = 'now() - 30m';
+
+/***
+ * Chart
+ *
+ */
+var samples_chart = new AmCharts.AmSerialChart();
+samples_chart.dataProvider = data_chart;
+samples_chart.categoryField = "time";
+samples_chart.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+// Axes
+samples_chart.categoryAxis = {
+	startOnAxis: true,
+	parseDates : true,
+	minPeriod : 'ss',
+	dashLength : 2,
+	gridAlpha : 0.15,
+	boldPeriodBeginning : false,
+	axisColor : "#DADADA"
+};
+samples_chart.dataDateFormat = "JJ:NN:SS";
+// Cursor
+var chartCursor = new AmCharts.ChartCursor();
+chartCursor.cursorPosition = "mouse";
+chartCursor.cursorColor = "#428BCA";
+chartCursor.pan = true; // no select
+chartCursor.categoryBalloonDateFormat = "JJ:NN:SS";
+samples_chart.addChartCursor(chartCursor);
+// Legend
+var legend = new AmCharts.AmLegend();
+legend.equalWidths = false;
+legend.valueWidth = 0;
+samples_chart.addLegend(legend);
+// Write
+samples_chart.write('samples-chart');
+
+/***
+ * Map
+ *
+ */
+var map = L.map('samples-map', {
+	center: [53.550556, 9.993333],
+	zoom: 13,
+	scrollWheelZoom: false
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	attribution: '&copy <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>'
+}).addTo(map);
+
+var route = L.polyline([[53.550556, 9.993333],[53.550556, 9.993333]]).addTo(map);
+var marker = L.marker([53.550556, 9.993333]).addTo(map);
+
+// Altitude
+var show_chart_alt_m = false;
+function chart_alt_m() {
+	var axisHm = new AmCharts.ValueAxis();
+	axisHm.position = "right";
+	axisHm.axisColor = "#CCCCCC";
+	axisHm.axisThickness = 0;
+	axisHm.gridAlpha = 0;
+	axisHm.labelFunction = function(){return''};
+	var graphHm = new AmCharts.AmGraph();
+	graphHm.valueAxis = axisHm;
+	graphHm.type = "smoothedLine";
+	graphHm.lineColor = "#CCCCCC";
+	graphHm.title = "Altitude";
+	graphHm.valueField = "alt_m";
+	graphHm.bullet = "none";
+	graphHm.fillAlphas = 1;
+	graphHm.balloonText = "[[value]] m";
+	samples_chart.addValueAxis(axisHm);
+	samples_chart.addGraph(graphHm);
+}
+
+// Speed
+var show_chart_spd_kph = false;
+function chart_spd_kph() {
+	axisKmh = new AmCharts.ValueAxis();
+	axisKmh.position = "left";
+	axisKmh.gridAlpha = 0;
+	axisKmh.axisColor = "#428BCA";
+	axisKmh.axisThickness = 1;
+	axisKmh.fontSize = 8;
+	var graphKmh = new AmCharts.AmGraph();
+	graphKmh.valueAxis = axisKmh;
+	graphKmh.lineColor = "#428BCA";
+	graphKmh.lineThickness = 1;
+	graphKmh.title = "Speed";
+	graphKmh.valueField = "spd_kph";
+	graphKmh.bullet = "none";
+	graphKmh.balloonText = "[[value]] kph";
+	axisKmh.offset = axisLeft * 35;
+	axisLeft = axisLeft + 1;
+	samples_chart.addValueAxis(axisKmh);
+	samples_chart.addGraph(graphKmh);
+}
+
+// Heart Rate
+var show_chart_hr_bpm = false;
+function chart_hr_bpm() {
+	var axisPuls = new AmCharts.ValueAxis();
+	axisPuls.position = "left";
+	axisPuls.axisColor = "#D9534F";
+	axisPuls.gridAlpha = 0;
+	axisPuls.axisThickness = 1;
+	axisPuls.fontSize = 8;
+	var graphPuls = new AmCharts.AmGraph();
+	graphPuls.valueAxis = axisPuls;
+	graphPuls.lineColor = "#D9534F";
+	graphPuls.lineThickness = 1;
+	graphPuls.title = "Heart Rate";
+	graphPuls.valueField = "hr_bpm";
+	graphPuls.bullet = "none";
+	graphPuls.balloonText = "[[value]] bpm";
+	axisPuls.offset = axisLeft * 35;
+	axisLeft = axisLeft + 1;
+	samples_chart.addValueAxis(axisPuls);
+	samples_chart.addGraph(graphPuls);
+}
+
+// Cadence
+var show_chart_cad_rpm = false;
+function chart_cad_rpm() {
+	var axisTritt = new AmCharts.ValueAxis();
+	axisTritt.position = "right";
+	axisTritt.axisColor = "#F0AD4E";
+	axisTritt.gridAlpha = 0;
+	axisTritt.axisThickness = 1;
+	axisTritt.fontSize = 8;
+	var graphTritt = new AmCharts.AmGraph();
+	graphTritt.valueAxis = axisTritt;
+	graphTritt.lineColor = "#F0AD4E";
+	graphTritt.lineThickness = 1;
+	graphTritt.title = "Cadence";
+	graphTritt.valueField = "cad_rpm";
+	graphTritt.bullet = "none";
+	graphTritt.balloonText = "[[value]] rpm";
+	axisTritt.offset = axisRight * 35;
+	axisRight = axisRight + 1;
+	samples_chart.addValueAxis(axisTritt);
+	samples_chart.addGraph(graphTritt);
+}
+
+// Power
+var show_chart_pwr_w = false;
+function chart_pwr_w(){
+	var axisWatt = new AmCharts.ValueAxis();
+	axisWatt.position = "right";
+	axisWatt.axisColor = "#5BC0DE";
+	axisWatt.gridAlpha = 0;
+	axisWatt.axisThickness = 1;
+	axisWatt.fontSize = 8;
+	var graphWatt = new AmCharts.AmGraph();
+	graphWatt.valueAxis = axisWatt;
+	graphWatt.lineColor = "#5BC0DE";
+	graphWatt.lineThickness = 1;
+	graphWatt.title = "Power";
+	graphWatt.valueField = "pwr_w";
+	graphWatt.bullet = "none";
+	graphWatt.balloonText = "[[value]] W";
+	axisWatt.offset = axisRight * 35;
+	axisRight = axisRight + 1;
+	samples_chart.addValueAxis(axisWatt);
+	samples_chart.addGraph(graphWatt);
+}
+
+
+/***
+ * InfluxDB query
+ *
+ */
+function get_query_sql() {
+	var query_sql = 'SELECT '+  // results: 0m values: n
+	'LAST(lat),'+        // 1
+	'LAST(lng),'+        // 2
+	'LAST(acc_m),'+      // 3
+	'LAST(bearing),'+    // 4
+	'LAST(battery),'+    // 5
+	'LAST(gsm_signal),'+ // 6
+	'LAST(temp_c),'+     // 7
+	'LAST(spd_kph),'+    // 8
+	'LAST(alt_m),'+      // 9
+	'LAST(hr_bpm),'+     // 10
+	'LAST(cad_rpm),'+    // 11
+	'LAST(pwr_w),'+      // 12
+	'LAST(dur_s),'+      // 13
+	'LAST(dist_km)'+     // 14
+	' FROM samples WHERE time > now() - 30m;'+
+	// temp_c
+	'SELECT MIN(temp_c), MEAN(temp_c), MAX(temp_c) FROM samples WHERE time > '+ last_timestamp +' - 3s;' + // results: 1, 3 sec
+	'SELECT MIN(temp_c), MEAN(temp_c), MAX(temp_c) FROM samples WHERE time > '+ last_timestamp +' - 1m;' + // results: 2, 1 min
+	'SELECT MIN(temp_c), MEAN(temp_c), MAX(temp_c) FROM samples WHERE time > '+ last_timestamp +' - 5m;' + // results: 3, 5 min
+	'SELECT MIN(temp_c), MEAN(temp_c), MAX(temp_c) FROM samples WHERE time > '+ last_timestamp +' - 10m;'+ // results: 4  10 min
+	// spd_kph
+	'SELECT MIN(spd_kph), MEAN(spd_kph), MAX(spd_kph) FROM samples WHERE time > '+ last_timestamp +' - 3s;' + // results: 5, 3 sec
+	'SELECT MIN(spd_kph), MEAN(spd_kph), MAX(spd_kph) FROM samples WHERE time > '+ last_timestamp +' - 1m;' + // results: 6, 1 min
+	'SELECT MIN(spd_kph), MEAN(spd_kph), MAX(spd_kph) FROM samples WHERE time > '+ last_timestamp +' - 5m;' + // results: 7, 5 min
+	'SELECT MIN(spd_kph), MEAN(spd_kph), MAX(spd_kph) FROM samples WHERE time > '+ last_timestamp +' - 10m;'+ // results: 8  10 min
+	// alt_m
+	'SELECT MIN(alt_m), MEAN(alt_m), MAX(alt_m) FROM samples WHERE time > '+ last_timestamp +' - 3s;' + // results: 9, 3 sec
+	'SELECT MIN(alt_m), MEAN(alt_m), MAX(alt_m) FROM samples WHERE time > '+ last_timestamp +' - 1m;' + // results: 10, 1 min
+	'SELECT MIN(alt_m), MEAN(alt_m), MAX(alt_m) FROM samples WHERE time > '+ last_timestamp +' - 5m;' + // results: 11, 5 min
+	'SELECT MIN(alt_m), MEAN(alt_m), MAX(alt_m) FROM samples WHERE time > '+ last_timestamp +' - 10m;'+ // results: 12  10 min
+	// hr_bpm
+	'SELECT MIN(hr_bpm), MEAN(hr_bpm), MAX(hr_bpm) FROM samples WHERE time > '+    last_timestamp +' - 3s;' + // results: 13, 3 sec
+	'SELECT MIN(hr_bpm), MEAN(hr_bpm), MAX(hr_bpm) FROM samples WHERE time > '+    last_timestamp +' - 1m;' + // results: 14, 1 min
+	'SELECT MIN(hr_bpm), MEAN(hr_bpm), MAX(hr_bpm) FROM samples WHERE time > '+    last_timestamp +' - 5m;' + // results: 15, 5 min
+	'SELECT MIN(hr_bpm), MEAN(hr_bpm), MAX(hr_bpm) FROM samples WHERE time > '+    last_timestamp +' - 10m;'+ // results: 16, 10 min
+	// cad_rpm
+	'SELECT MIN(cad_rpm), MEAN(cad_rpm), MAX(cad_rpm) FROM samples WHERE time > '+ last_timestamp +' - 3s;' + // results: 17,  3 sec
+	'SELECT MIN(cad_rpm), MEAN(cad_rpm), MAX(cad_rpm) FROM samples WHERE time > '+ last_timestamp +' - 1m;' + // results: 18, 1 min
+	'SELECT MIN(cad_rpm), MEAN(cad_rpm), MAX(cad_rpm) FROM samples WHERE time > '+ last_timestamp +' - 5m;' + // results: 19, 5 min
+	'SELECT MIN(cad_rpm), MEAN(cad_rpm), MAX(cad_rpm) FROM samples WHERE time > '+ last_timestamp +' - 10m;'+ // results: 20, 10 min
+	// pwr_w
+	'SELECT MIN(pwr_w), MEAN(pwr_w), MAX(pwr_w) FROM samples WHERE time > '+       last_timestamp +' - 3s;' + // results: 21, 3 sec
+	'SELECT MIN(pwr_w), MEAN(pwr_w), MAX(pwr_w) FROM samples WHERE time > '+       last_timestamp +' - 1m;' + // results: 22, 1 min
+	'SELECT MIN(pwr_w), MEAN(pwr_w), MAX(pwr_w) FROM samples WHERE time > '+       last_timestamp +' - 5m;' + // results: 23, 5 min
+	'SELECT MIN(pwr_w), MEAN(pwr_w), MAX(pwr_w) FROM samples WHERE time > '+       last_timestamp +' - 10m;'+ // results: 24, 10 min
+	'SELECT '+ // results: 25, values: n
+	'MEAN(lat),'+        // 1
+	'MEAN(lng),'+        // 2
+	'MEAN(acc_m),'+      // 3
+	'MEAN(battery),'+    // 4
+	'MEAN(gsm_signal),'+ // 5
+	'MEAN(temp_c),'+     // 6
+	'MEAN(spd_kph),'+    // 7
+	'MEAN(alt_m),'+      // 8
+	'MEAN(hr_bpm),'+     // 9
+	'MEAN(cad_rpm),'+    // 10
+	'MEAN(pwr_w),'+      // 11
+	'MEAN(pwr_w_l),'+    // 12
+	'MEAN(pwr_w_r)'+     // 13
+	' FROM samples'+
+	' WHERE time > ' + last_samples_timestamp + // WHERE time > last_samples_timestamp
+	' GROUP BY time(3s) fill(none)'; // https://docs.influxdata.com/influxdb/v1.2/query_language/data_exploration/#group-by-time-intervals-and-fill
+	return query_sql;
+}
+
+/***
+ * Format
+ *
+ */
+
+function time(timestamp) {
+	var seconds = timestamp;
+	var milliseconds = seconds*1000;
+	var d = new Date(milliseconds);
+	return d;
+}
+
+function dur_s(d) {
+	if (d && d > 0){
+		d = Number(d);
+		var h = Math.floor(d / 3600);
+		var m = Math.floor(d % 3600 / 60);
+		var s = Math.floor(d % 3600 % 60);
+		return ((h > 0 ? (h >= 10 ? h : '0' + h): '00') + ':' + (m > 0 ? (m >= 10 ? m : '0' + m): '00') + ':' + (s > 0 ? (s >= 10 ? s : '0' + s): '00')  );
+	} else {
+		return null;
+	}
+}
+
+function dist_km(km) {
+	if (km && km > 0){
+		return numeral(km).format('0.00')
+	} else {
+		return null
+	}
+}
+
+function acc_m(meter) {
+	if (meter && meter > 0){
+		return numeral(meter).format('0')
+	} else {
+		return null
+	}
+}
+
+function battery(percent) {
+	if (percent >= 0){
+		return numeral(percent).format('0')
+	} else {
+		return null
+	}
+}
+
+function gsm_signal(percent) {
+	if (percent != null && percent >= 0){
+		return numeral(percent).format('0')
+	} else {
+		return null
+	}
+}
+
+function temp_c(celsius) {
+	if (celsius && (celsius > -90 && celsius < 90)){
+		return numeral(celsius).format('0.00')
+	} else {
+		return null
+	}
+}
+
+
+function spd_kph(kph) {
+	if (kph != null && kph >= 0){
+		return numeral(kph).format('0.00')
+	} else {
+		return null
+	}
+}
+
+function alt_m(meter) {
+	if (meter && (meter > 0 || meter < 0)){
+		return numeral(meter).format('0')
+	} else {
+		return null
+	}
+}
+
+function hr_bpm(bpm) {
+	if (bpm && bpm > 0){
+		return numeral(bpm).format('0')
+	} else {
+		return null
+	}
+}
+
+function cad_rpm(rpm) {
+	if (rpm != null && rpm >= 0){
+		return numeral(rpm).format('0')
+	} else {
+		return null
+	}
+}
+
+function pwr_w(watt) {
+	if (watt != null && watt >= 0){
+		return numeral(watt).format('0')
+	} else {
+		return null
+	}
+}
+
+
+/***
+ * Helper
+ *
+ */
+
+function online(){
+	$("#error").addClass("hidden");
+	$("#not-shared").addClass("hidden");
+	$("#download").removeClass("hidden");
+	document.title = '▶️️ ' + username + ' - Live Tracking';
+}
+
+function offline(){
+	$("#waiting").addClass("hidden");
+	$("#error").removeClass("hidden");
+	document.title = '⏸️ ' + username + ' - Live Tracking';
+}
+
+/***
+ * Query InfluxDB
+ *
+ */
+
+function query() {
+	$.ajax({
+		dataType: "json",
+		method: "GET",
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader ("Authorization", "Basic " + btoa('public:livetracking'));
+		},
+		url: '{{ influxdb_url|e }}/query',
+		data: {
+			db: username,
+			epoch: 's',
+			q: get_query_sql()
+		},
+		crossDomain: true
+	}).error(function(xhr){
+		//var status = xhr.status;
+		offline();
+	}).success(function(json){
+		online();
+		query_result(json);
+	});
+}
+
+function query_result(json){
+	if (json['results']){
+		// last time, battery and gsm signal
+		if (json['results']['0']['series']) {
+			if (json['results']['0']['series']['0']['values']) {
+				$("#last").removeClass("hidden");
+				$("#mean").removeClass("hidden");
+				$("#min").removeClass("hidden");
+				$("#max").removeClass("hidden");
+				$("#waiting").addClass("hidden");
+				// battery
+				if (json['results']['0']['series']['0']['values']['0']['5']){
+					$("#battery").removeClass("hidden");
+					$("#last_battery").html(battery(json['results']['0']['series']['0']['values']['0']['5']));
+				}
+				// gsm_signal
+				if (json['results']['0']['series']['0']['values']['0']['6']) {
+					$("#gsm_signal").removeClass("hidden");
+					$("#last_gsm_signal").html(gsm_signal(json['results']['0']['series']['0']['values']['0']['6']));
+				}
+				// temp_c
+				if (json['results']['0']['series']['0']['values']['0']['7']){
+					$("#temp_c").removeClass("hidden");
+					$("#last_temp_c").html(temp_c(json['results']['0']['series']['0']['values']['0']['7']));
+				}
+				// spd_kph
+				if (json['results']['0']['series']['0']['values']['0']['8']){
+					$("#spd_kph").removeClass("hidden");
+					$("#last_spd_kph").html(spd_kph(json['results']['0']['series']['0']['values']['0']['8']));
+				}
+				// alt_m
+				if (json['results']['0']['series']['0']['values']['0']['9']){
+					$("#alt_m").removeClass("hidden");
+					$("#last_alt_m").html(alt_m(json['results']['0']['series']['0']['values']['0']['9']));
+				}
+				// hr_bpm
+				if (json['results']['0']['series']['0']['values']['0']['10']){
+					$("#hr_bpm").removeClass("hidden");
+					$("#last_hr_bpm").html(hr_bpm(json['results']['0']['series']['0']['values']['0']['10']));
+				}
+				// cad_rpm
+				if (json['results']['0']['series']['0']['values']['0']['11']){
+					$("#cad_rpm").removeClass("hidden");
+					$("#last_cad_rpm").html(cad_rpm(json['results']['0']['series']['0']['values']['0']['11']));
+				}
+				// pwr_w
+				if (json['results']['0']['series']['0']['values']['0']['12']){
+					$("#pwr_w").removeClass("hidden");
+					$("#last_pwr_w").html(pwr_w(json['results']['0']['series']['0']['values']['0']['12']));
+				}
+				// dur_s
+				if (json['results']['0']['series']['0']['values']['0']['13']) {
+					$("#dur_s").removeClass("hidden");
+					$("#last_dur_s").html(dur_s(json['results']['0']['series']['0']['values']['0']['13']));
+				}
+				// dist_km
+				if (json['results']['0']['series']['0']['values']['0']['14']) {
+					$("#dist_km").removeClass("hidden");
+					$("#last_dist_km").html(dist_km(json['results']['0']['series']['0']['values']['0']['14']));
+				}
+			}
+		} else {
+			$("#last").addClass("hidden");
+			$("#mean").addClass("hidden");
+			$("#min").addClass("hidden");
+			$("#max").addClass("hidden");
+			$("#dist_km").addClass("hidden");
+			$("#dur_s").addClass("hidden");
+			$("#waiting").removeClass("hidden");
+		}
+		// samples
+		if (json['results']['25']['series']){
+			if (json['results']['25']['series']['0']['values']) {
+				results_length = json['results']['25']['series']['0']['values'].length
+				for (var i = 0; i < results_length; i++) {
+					sample = json['results']['25']['series']['0']['values'][i];
+					last_timestamp = sample['0'] + 's';
+					last_samples_timestamp = sample['0'] + 's';
+					// Array for line chart data
+					var seconds = sample['0'];
+					var milliseconds = seconds*1000;
+					var d = new Date(milliseconds);
+					data_chart.push({
+						time       : d,
+						acc_m      : acc_m(sample['3']),
+						battery    : battery(sample['4']),
+						gsm_signal : gsm_signal(sample['5']),
+						temp_c     : temp_c(sample['6']),
+						spd_kph    : spd_kph(sample['7']),
+						alt_m      : alt_m(sample['8']),
+						hr_bpm     : hr_bpm(sample['9']),
+						cad_rpm    : cad_rpm(sample['10']),
+						pwr_w      : pwr_w(sample['11']),
+						pwr_w_l    : pwr_w(sample['12']),
+						pwr_w_r    : pwr_w(sample['13'])
+					});
+					
+					// Array for map data
+					if (sample['1'] && sample['2']) {
+						data_map.push(
+							[ sample['1'], sample['2'] ]
+						);
+					}
+					
+					// Remove first item from array if > 30min (1800sec / 3sec smoothing = 600)
+					if (data_map.length > 600) {
+						data_map.shift();
+					}
+					if (data_chart.length > 600) {
+						data_chart.shift();
+					}
+				}
+			}
+			// Update last_lime
+			$("#time").removeClass("hidden");
+			$("#last_time").html(data_chart[data_chart.length-1]['time']);
+			// Update chart
+			$("#samples-chart").removeClass("hidden");
+			samples_chart.validateData();
+			// Update map
+			if (data_map.length) {
+				marker.removeFrom(map); // Remove marker
+				route.removeFrom(map);
+				marker = L.marker(data_map[data_map.length-1]).addTo(map); // Add marker
+				route = L.polyline(data_map).addTo(map);
+				map.setView(data_map[data_map.length-1]); // Center view, but not zoom
+			}
+		}
+		// alt_m
+		if (json['results']['12']['series'] && json['results']['12']['series']['0']['values']['0']['2']){
+			$("#mean_alt_m").removeClass("hidden");
+			$("#min_alt_m").removeClass("hidden");
+			$("#max_alt_m").removeClass("hidden");
+			if (!show_chart_alt_m) {
+				chart_alt_m();
+				show_chart_alt_m = true;
+			}
+			// 3 sec
+			if (json['results']['9']['series']) {
+				if (json['results']['9']['series']['0']['values']) {
+					$("#min_alt_m_3s").html(alt_m(json['results']['9']['series']['0']['values']['0']['1']))
+					$("#mean_alt_m_3s").html(alt_m(json['results']['9']['series']['0']['values']['0']['2']))
+					$("#max_alt_m_3s").html(alt_m(json['results']['9']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['10']['series']) {
+				if (json['results']['10']['series']['0']['values']) {
+					$("#min_alt_m_1m").html(alt_m(json['results']['10']['series']['0']['values']['0']['1']))
+					$("#mean_alt_m_1m").html(alt_m(json['results']['10']['series']['0']['values']['0']['2']))
+					$("#max_alt_m_1m").html(alt_m(json['results']['10']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['11']['series']) {
+				if (json['results']['11']['series']['0']['values']) {
+					$("#min_alt_m_5m").html(alt_m(json['results']['11']['series']['0']['values']['0']['1']))
+					$("#mean_alt_m_5m").html(alt_m(json['results']['11']['series']['0']['values']['0']['2']))
+					$("#max_alt_m_5m").html(alt_m(json['results']['11']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['12']['series']) {
+				if (json['results']['12']['series']['0']['values']) {
+					$("#min_alt_m_10m").html(alt_m(json['results']['12']['series']['0']['values']['0']['1']))
+					$("#mean_alt_m_10m").html(alt_m(json['results']['12']['series']['0']['values']['0']['2']))
+					$("#max_alt_m_10m").html(alt_m(json['results']['12']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+		// temp_c
+		if (json['results']['4']['series'] && json['results']['4']['series']['0']['values']['0']['2']){
+			$("#mean_temp_c").removeClass("hidden");
+			$("#min_temp_c").removeClass("hidden");
+			$("#max_temp_c").removeClass("hidden");
+			
+			// 3 sec
+			if (json['results']['1']['series']) {
+				if (json['results']['1']['series']['0']['values']) {
+					$("#min_temp_c_3s").html(temp_c(json['results']['1']['series']['0']['values']['0']['1']))
+					$("#mean_temp_c_3s").html(temp_c(json['results']['1']['series']['0']['values']['0']['2']))
+					$("#max_temp_c_3s").html(temp_c(json['results']['1']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['2']['series']) {
+				if (json['results']['2']['series']['0']['values']) {
+					$("#min_temp_c_1m").html(temp_c(json['results']['2']['series']['0']['values']['0']['1']))
+					$("#mean_temp_c_1m").html(temp_c(json['results']['2']['series']['0']['values']['0']['2']))
+					$("#max_temp_c_1m").html(temp_c(json['results']['2']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['3']['series']) {
+				if (json['results']['3']['series']['0']['values']) {
+					$("#min_temp_c_5m").html(temp_c(json['results']['3']['series']['0']['values']['0']['1']))
+					$("#mean_temp_c_5m").html(temp_c(json['results']['3']['series']['0']['values']['0']['2']))
+					$("#max_temp_c_5m").html(temp_c(json['results']['3']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['4']['series']) {
+				if (json['results']['4']['series']['0']['values']) {
+					$("#min_temp_c_10m").html(temp_c(json['results']['4']['series']['0']['values']['0']['1']))
+					$("#mean_temp_c_10m").html(temp_c(json['results']['4']['series']['0']['values']['0']['2']))
+					$("#max_temp_c_10m").html(temp_c(json['results']['4']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+		// spd_kph
+		if (json['results']['8']['series'] && json['results']['8']['series']['0']['values']['0']['2']){
+			$("#mean_spd_kph").removeClass("hidden");
+			$("#min_spd_kph").removeClass("hidden");
+			$("#max_spd_kph").removeClass("hidden");
+			if (!show_chart_spd_kph) {
+				chart_spd_kph();
+				show_chart_spd_kph = true;
+			}
+			// 3 sec
+			if (json['results']['5']['series']) {
+				if (json['results']['5']['series']['0']['values']) {
+					$("#min_spd_kph_3s").html(spd_kph(json['results']['5']['series']['0']['values']['0']['1']))
+					$("#mean_spd_kph_3s").html(spd_kph(json['results']['5']['series']['0']['values']['0']['2']))
+					$("#max_spd_kph_3s").html(spd_kph(json['results']['5']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['6']['series']) {
+				if (json['results']['6']['series']['0']['values']) {
+					$("#min_spd_kph_1m").html(spd_kph(json['results']['6']['series']['0']['values']['0']['1']))
+					$("#mean_spd_kph_1m").html(spd_kph(json['results']['6']['series']['0']['values']['0']['2']))
+					$("#max_spd_kph_1m").html(spd_kph(json['results']['6']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['7']['series']) {
+				if (json['results']['7']['series']['0']['values']) {
+					$("#min_spd_kph_5m").html(spd_kph(json['results']['7']['series']['0']['values']['0']['1']))
+					$("#mean_spd_kph_5m").html(spd_kph(json['results']['7']['series']['0']['values']['0']['2']))
+					$("#max_spd_kph_5m").html(spd_kph(json['results']['7']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['8']['series']) {
+				if (json['results']['8']['series']['0']['values']) {
+					$("#min_spd_kph_10m").html(spd_kph(json['results']['8']['series']['0']['values']['0']['1']))
+					$("#mean_spd_kph_10m").html(spd_kph(json['results']['8']['series']['0']['values']['0']['2']))
+					$("#max_spd_kph_10m").html(spd_kph(json['results']['8']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+		// hr_bpm
+		if (json['results']['16']['series'] && json['results']['16']['series']['0']['values']['0']['2']){
+			$("#mean_hr_bpm").removeClass("hidden");
+			$("#min_hr_bpm").removeClass("hidden");
+			$("#max_hr_bpm").removeClass("hidden");
+			if (!show_chart_hr_bpm) {
+				chart_hr_bpm();
+				show_chart_hr_bpm = true;
+			}
+			// 3 sec
+			if (json['results']['13']['series']) {
+				if (json['results']['13']['series']['0']['values']) {
+					$("#min_hr_bpm_3s").html(hr_bpm(json['results']['13']['series']['0']['values']['0']['1']))
+					$("#mean_hr_bpm_3s").html(hr_bpm(json['results']['13']['series']['0']['values']['0']['2']))
+					$("#max_hr_bpm_3s").html(hr_bpm(json['results']['13']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['14']['series']) {
+				if (json['results']['14']['series']['0']['values']) {
+					$("#min_hr_bpm_1m").html(hr_bpm(json['results']['14']['series']['0']['values']['0']['1']))
+					$("#mean_hr_bpm_1m").html(hr_bpm(json['results']['14']['series']['0']['values']['0']['2']))
+					$("#max_hr_bpm_1m").html(hr_bpm(json['results']['14']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['15']['series']) {
+				if (json['results']['15']['series']['0']['values']) {
+					$("#min_hr_bpm_5m").html(hr_bpm(json['results']['15']['series']['0']['values']['0']['1']))
+					$("#mean_hr_bpm_5m").html(hr_bpm(json['results']['15']['series']['0']['values']['0']['2']))
+					$("#max_hr_bpm_5m").html(hr_bpm(json['results']['15']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['16']['series']) {
+				if (json['results']['16']['series']['0']['values']) {
+					$("#min_hr_bpm_10m").html(hr_bpm(json['results']['16']['series']['0']['values']['0']['1']))
+					$("#mean_hr_bpm_10m").html(hr_bpm(json['results']['16']['series']['0']['values']['0']['2']))
+					$("#max_hr_bpm_10m").html(hr_bpm(json['results']['16']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+		// cad_rpm
+		if (json['results']['20']['series'] && json['results']['20']['series']['0']['values']['0']['2']){
+			$("#mean_cad_rpm").removeClass("hidden");
+			$("#min_cad_rpm").removeClass("hidden");
+			$("#max_cad_rpm").removeClass("hidden");
+			if (!show_chart_cad_rpm) {
+				chart_cad_rpm();
+				show_chart_cad_rpm = true;
+			}
+			// 3 sec
+			if (json['results']['17']['series']) {
+				if (json['results']['17']['series']['0']['values']) {
+					$("#min_cad_rpm_3s").html(cad_rpm(json['results']['17']['series']['0']['values']['0']['1']))
+					$("#mean_cad_rpm_3s").html(cad_rpm(json['results']['17']['series']['0']['values']['0']['2']))
+					$("#max_cad_rpm_3s").html(cad_rpm(json['results']['17']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['18']['series']) {
+				if (json['results']['18']['series']['0']['values']) {
+					$("#min_cad_rpm_1m").html(cad_rpm(json['results']['18']['series']['0']['values']['0']['1']))
+					$("#mean_cad_rpm_1m").html(cad_rpm(json['results']['18']['series']['0']['values']['0']['2']))
+					$("#max_cad_rpm_1m").html(cad_rpm(json['results']['18']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['19']['series']) {
+				if (json['results']['19']['series']['0']['values']) {
+					$("#min_cad_rpm_5m").html(cad_rpm(json['results']['19']['series']['0']['values']['0']['1']))
+					$("#mean_cad_rpm_5m").html(cad_rpm(json['results']['19']['series']['0']['values']['0']['2']))
+					$("#max_cad_rpm_5m").html(cad_rpm(json['results']['19']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['20']['series']) {
+				if (json['results']['20']['series']['0']['values']) {
+					$("#min_cad_rpm_10m").html(cad_rpm(json['results']['20']['series']['0']['values']['0']['1']))
+					$("#mean_cad_rpm_10m").html(cad_rpm(json['results']['20']['series']['0']['values']['0']['2']))
+					$("#max_cad_rpm_10m").html(cad_rpm(json['results']['20']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+		// pwr_w
+		if (json['results']['24']['series'] && json['results']['24']['series']['0']['values']['0']['2']){
+			$("#mean_pwr_w").removeClass("hidden");
+			$("#min_pwr_w").removeClass("hidden");
+			$("#max_pwr_w").removeClass("hidden");
+			if (!show_chart_pwr_w) {
+				chart_pwr_w();
+				show_chart_pwr_w = true;
+			}
+			// 3 sec
+			if (json['results']['21']['series']) {
+				if (json['results']['21']['series']['0']['values']) {
+					$("#min_pwr_w_3s").html(pwr_w(json['results']['21']['series']['0']['values']['0']['1']))
+					$("#mean_pwr_w_3s").html(pwr_w(json['results']['21']['series']['0']['values']['0']['2']))
+					$("#max_pwr_w_3s").html(pwr_w(json['results']['21']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 1 min
+			if (json['results']['22']['series']) {
+				if (json['results']['22']['series']['0']['values']) {
+					$("#min_pwr_w_1m").html(pwr_w(json['results']['22']['series']['0']['values']['0']['1']))
+					$("#mean_pwr_w_1m").html(pwr_w(json['results']['22']['series']['0']['values']['0']['2']))
+					$("#max_pwr_w_1m").html(pwr_w(json['results']['22']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 5 min
+			if (json['results']['23']['series']) {
+				if (json['results']['23']['series']['0']['values']) {
+					$("#min_pwr_w_5m").html(pwr_w(json['results']['23']['series']['0']['values']['0']['1']))
+					$("#mean_pwr_w_5m").html(pwr_w(json['results']['23']['series']['0']['values']['0']['2']))
+					$("#max_pwr_w_5m").html(pwr_w(json['results']['23']['series']['0']['values']['0']['3']))
+				}
+			}
+			// 10 min
+			if (json['results']['24']['series']) {
+				if (json['results']['24']['series']['0']['values']) {
+					$("#min_pwr_w_10m").html(pwr_w(json['results']['24']['series']['0']['values']['0']['1']))
+					$("#mean_pwr_w_10m").html(pwr_w(json['results']['24']['series']['0']['values']['0']['2']))
+					$("#max_pwr_w_10m").html(pwr_w(json['results']['24']['series']['0']['values']['0']['3']))
+				}
+			}
+		}
+	}
+}
+
+// first
+query();
+
+// reload every 6 sec
+setInterval( function() {
+	query();
+	// spinner animation
+	$("#refresh").addClass( 'fa-spin' );
+	setTimeout(function() { $("#refresh").removeClass( 'fa-spin' ) }, 1000);
+}, 6000 );
+
+</script>
+
+</body>
+</html>

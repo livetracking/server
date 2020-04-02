@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="livetrackingDeploy" default="deploy">
+
+	<property name="server.webroot" value="/var/www/app" />
+	
+	<property environment="env" />
+	
+	<tstamp>
+		<format property="build.time" pattern="%Y_%m_%d_%H_%M_%S" />
+	</tstamp>
+	
+	<property name="settings" value="" />
+	
+	<target name="deploy" description="Deploy">
+		<echo>Hello ${env.USER}</echo>
+		
+		<reflexive>
+			<fileset dir="./src">
+				<include pattern="settings.php" />
+			</fileset>
+			<filterchain>
+				<replaceregexp>
+					<regexp pattern="'dsn' => 'sqlite:' . __DIR__ . '/../database/users.sqlite'" replace="'dsn' => 'sqlite:/var/lib/sqlite/users.sqlite'" />
+					<regexp pattern="'displayErrorDetails' => true" replace="'displayErrorDetails' => false" />
+					<regexp pattern="'hostname' => '127.0.0.1'" replace="'hostname' => '127.0.0.1'" />
+					<regexp pattern="'username' => 'ADMIN-USERNAME'" replace="'username' => '${env.INFLUX_USERNAME}'" />
+					<regexp pattern="'password' => 'ADMIN-PASSWORD'" replace="'password' => '${env.INFLUX_PASSWORD}'" />
+					<regexp pattern="'path' => __DIR__ . '/../logs/app.log'" replace="'path' => '/var/log/lighttpd/livetracking.log'" />
+				</replaceregexp>
+			</filterchain>
+		</reflexive>
+				
+		<copy todir="${server.webroot}/livetracking-${build.time}" >
+			<fileset dir=".">
+				<include name="public/**" />
+				<include name="src/**" />
+				<include name="templates/**" />
+				<include name="vendor/**" />
+				<exclude name="**/.git" />
+				<exclude name="**/.git/**" />
+				<exclude name="**/.travis.yml/**" />
+			</fileset>
+		</copy>
+		
+		<!-- Make the code live -->
+		<symlink target="${server.webroot}/livetracking-${build.time}" link="${server.webroot}/livetracking" overwrite="true" />
+		
+	</target>
+	
+</project>

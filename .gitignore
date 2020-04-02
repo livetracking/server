@@ -1,0 +1,9 @@
+/vendor/
+/logs/*
+!/logs/README.md
+/database/*
+!/database/users.sql
+!/database/*.sh
+!/database/*.php
+!/database/README.md
+composer.lock
